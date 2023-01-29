@@ -34,7 +34,7 @@ function TemperaturDetails() {
           </div>
           <div className="flex font-light text-sm items-center justify-center">
             <UilWind size={18} className="mr-1" />
-            Wind Speed:
+            Wind:
             <span className="font-medium ml-1">15 Km/h</span>
           </div>
         </div>
