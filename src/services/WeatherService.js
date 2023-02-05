@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 const API_KEY = "92580ea4c6faf9aec529b18b1b885d5e";
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
 
@@ -7,9 +9,6 @@ const BASE_URL = "https://api.openweathermap.org/data/2.5";
 const getWeatherData = function (infoType, searchParams) {
   const url = new URL(BASE_URL + "/" + infoType);
   url.search = new URLSearchParams({ ...searchParams, appid: API_KEY });
-
-  console.log(url);
-  console.log(url.search);
 
   return fetch(url)
     .then((res) => res.json())
@@ -47,13 +46,49 @@ const formatCurrentWeatherData = (data) => {
   };
 };
 
+const statisticalForecastData = (data) => {
+  console.log(data);
+
+  let { timezone, daily, hourly } = data;
+  daily = daily.slice(1, 6).map((d) => {
+    return {
+      title: formatLocaleTime(d.dt, timezone, "ccc"),
+      temp: d.temp.day,
+      icon: d.weather[0].icon,
+    };
+  });
+
+  hourly = hourly.slice(1, 6).map((d) => {
+    return {
+      title: formatLocaleTime(d.dt, timezone, "hh:mm a"),
+      temp: d.temp.day,
+      icon: d.weather[0].icon,
+    };
+  });
+
+  return { timezone, daily, hourly };
+};
+
 const getFormattedWeatherData = async (searchParams) => {
   const formattedCurrrentWeather = await getWeatherData(
     "weather",
     searchParams
   ).then(formatCurrentWeatherData);
 
-  return formattedCurrrentWeather;
+  const { lat, lon } = formattedCurrrentWeather;
+
+  const formattedForecastWeather = await getWeatherData("onecall", {
+    lat,
+    lon,
+    exclude: " current , minutely,alerts",
+    units: searchParams.units,
+  }).then(statisticalForecastData);
+  return { ...formattedCurrrentWeather, ...formattedForecastWeather };
 };
 
+const formatLocaleTime = (
+  secs,
+  zone,
+  format = "cccc, dd LLL yyyy' | Local Time : 'hh:mm a"
+) => DateTime.fromSeconds(secs).setZone(zone).toFormat(format);
 export default getFormattedWeatherData;
